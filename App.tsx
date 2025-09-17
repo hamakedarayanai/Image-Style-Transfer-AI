@@ -7,6 +7,36 @@ import ImageDisplay from './components/ImageDisplay';
 import Spinner from './components/Spinner';
 import StyleSelector from './components/StyleSelector';
 
+/**
+ * Processes a raw error string from the AI service into a user-friendly message.
+ * @param rawError The raw error message string.
+ * @returns A formatted, user-friendly error message with suggestions.
+ */
+const processErrorMessage = (rawError: string): string => {
+  console.error("Raw AI Error:", rawError); // For debugging purposes
+  const lowerCaseError = rawError.toLowerCase();
+
+  if (lowerCaseError.includes('safety') || lowerCaseError.includes('blocked')) {
+    return "Request blocked due to safety policies. This can happen with images of people (especially children) or other restricted content. Please try a different image or style.";
+  }
+  if (lowerCaseError.includes('api key not valid')) {
+    return "There's an issue with the application's API configuration. Please contact support.";
+  }
+  if (lowerCaseError.includes('quota')) {
+    return "The application has exceeded its usage limit. Please try again later.";
+  }
+  if (lowerCaseError.includes('network error') || lowerCaseError.includes('fetch')) {
+    return "A network error occurred. Please check your internet connection and try again.";
+  }
+  if (lowerCaseError.includes('resource has been exhausted')) {
+    return "The AI model is currently overloaded with requests. Please try again in a moment.";
+  }
+  
+  // Generic fallback for other errors
+  return "An unexpected error occurred during generation. The AI may be temporarily unavailable. Please try again.";
+};
+
+
 const App: React.FC = () => {
   const [originalImage, setOriginalImage] = useState<File | null>(null);
   const [originalImagePreview, setOriginalImagePreview] = useState<string | null>(null);
@@ -64,14 +94,22 @@ const App: React.FC = () => {
     try {
       const selectedStyle = conversionType === ConversionType.REALISTIC_TO_CARTOON ? cartoonStyle : realisticStyle;
       const { imageUrl, text } = await convertImage(originalImage, conversionType, selectedStyle);
+      
+      setModelTextResponse(text);
+
       if (imageUrl) {
         setGeneratedImage(imageUrl);
       } else {
-        setError("The AI did not return an image. It might have refused the request.");
+        // Handle cases where the API call succeeds but no image is returned (e.g., content policy refusal without an error)
+        setError(
+          "The AI did not return an image. This can happen due to safety filters or if the request is unclear. " +
+          (text ? `The AI's response: "${text}"` : 'Try using a different image or a different style.')
+        );
       }
-      setModelTextResponse(text);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred.");
+      // Handle hard errors from the API call (e.g., network issues, invalid API key, safety blocks that throw)
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      setError(processErrorMessage(errorMessage));
     } finally {
       setIsLoading(false);
     }
@@ -132,8 +170,14 @@ const App: React.FC = () => {
               ) : 'Generate'}
             </button>
             {error && (
-              <div className="mt-4 text-center bg-red-900/50 text-red-300 p-3 rounded-lg border border-red-700">
-                {error}
+              <div className="mt-4 text-left bg-red-900/50 text-red-300 p-4 rounded-lg border border-red-700 space-y-2">
+                <div className="flex items-center justify-center font-bold">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  <p>Generation Failed</p>
+                </div>
+                <p className="text-sm text-red-200">{error}</p>
               </div>
             )}
           </div>

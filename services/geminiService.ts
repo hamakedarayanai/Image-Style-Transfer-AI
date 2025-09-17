@@ -95,9 +95,7 @@ export const convertImage = async (imageFile: File, conversionType: ConversionTy
     return { imageUrl, text };
   } catch (error) {
     console.error("Error converting image:", error);
-    if (error instanceof Error) {
-        throw new Error(`Failed to generate image: ${error.message}`);
-    }
-    throw new Error("An unknown error occurred during image generation.");
+    // Re-throw the original error so the UI layer can process it for more specific feedback.
+    throw error;
   }
 };
