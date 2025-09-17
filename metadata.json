@@ -1,0 +1,5 @@
+{
+  "name": "Image Style Transfer AI",
+  "description": "An application that uses AI to convert images between realistic and cartoon styles. Upload an image, choose a conversion, and let the AI generate a new version.",
+  "requestFramePermissions": []
+}
