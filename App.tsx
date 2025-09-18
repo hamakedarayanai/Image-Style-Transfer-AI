@@ -6,6 +6,7 @@ import ConversionControls from './components/ConversionControls';
 import ImageDisplay from './components/ImageDisplay';
 import Spinner from './components/Spinner';
 import StyleSelector from './components/StyleSelector';
+import AppLogo from './components/AppLogo';
 
 /**
  * Processes a raw error string from the AI service into a user-friendly message.
@@ -117,6 +118,7 @@ const App: React.FC = () => {
   
   const Header: React.FC = () => (
     <header className="text-center p-4 md:p-6">
+      <AppLogo />
       <h1 className="text-4xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
         Image Style Transfer AI
       </h1>
