@@ -74,6 +74,14 @@ const App: React.FC = () => {
     reader.readAsDataURL(file);
   }, []);
 
+  const handleClear = useCallback(() => {
+    setOriginalImage(null);
+    setOriginalImagePreview(null);
+    setGeneratedImage(null);
+    setError(null);
+    setModelTextResponse(null);
+  }, []);
+
   const handleConversionChange = (type: ConversionType) => {
     setConversionType(type);
     setGeneratedImage(null);
@@ -101,14 +109,12 @@ const App: React.FC = () => {
       if (imageUrl) {
         setGeneratedImage(imageUrl);
       } else {
-        // Handle cases where the API call succeeds but no image is returned (e.g., content policy refusal without an error)
         setError(
           "The AI did not return an image. This can happen due to safety filters or if the request is unclear. " +
           (text ? `The AI's response: "${text}"` : 'Try using a different image or a different style.')
         );
       }
     } catch (err) {
-      // Handle hard errors from the API call (e.g., network issues, invalid API key, safety blocks that throw)
       const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
       setError(processErrorMessage(errorMessage));
     } finally {
@@ -123,69 +129,116 @@ const App: React.FC = () => {
         Image Style Transfer AI
       </h1>
       <p className="text-slate-400 mt-2 text-lg">
-        Transform your images between <span className="font-semibold text-slate-300">realistic photos</span> and <span className="font-semibold text-slate-300">stylized cartoons</span>.
+        Let AI reimagine your photos with stunning artistic styles.
       </p>
     </header>
   );
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 flex flex-col items-center p-4">
-      <div className="w-full max-w-6xl mx-auto">
+      <style>{`
+        @keyframes slideUpFadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up-fade-in {
+          animation: slideUpFadeIn 0.3s ease-out forwards;
+        }
+      `}</style>
+      <div className="w-full max-w-7xl mx-auto">
         <Header />
         
-        <main className="mt-8 flex flex-col items-center gap-8">
-          <div className="w-full max-w-lg bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-lg">
-            <ImageUploader onImageUpload={handleImageUpload} />
-            <ConversionControls
-              conversionType={conversionType}
-              onConversionChange={handleConversionChange}
-              isDisabled={isLoading}
-            />
-             {conversionType === ConversionType.REALISTIC_TO_CARTOON && (
-              <StyleSelector
-                title="Choose Cartoon Style"
-                styles={CARTOON_STYLE_OPTIONS}
-                selectedStyle={cartoonStyle}
-                onStyleChange={(style) => setCartoonStyle(style as CartoonStyle)}
-                isDisabled={isLoading}
-              />
+        <main className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          {/* Left Column: Input & Controls */}
+          <div className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-lg flex flex-col gap-6">
+            {!originalImagePreview ? (
+              <div className="flex flex-col gap-4 text-center">
+                <h2 className="text-xl font-bold text-slate-300">1. Upload an Image</h2>
+                <p className="text-slate-400 -mt-2">Start by selecting a photo from your device.</p>
+                <ImageUploader onImageUpload={handleImageUpload} />
+              </div>
+            ) : (
+              <>
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-center text-slate-300">1. Your Image</h2>
+                  <div className="relative aspect-square w-full bg-slate-800 rounded-lg overflow-hidden ring-1 ring-slate-700">
+                    <img src={originalImagePreview} alt="Original upload" className="object-contain w-full h-full" />
+                  </div>
+                  <button
+                    onClick={handleClear}
+                    className="w-full bg-slate-700 text-slate-300 font-bold py-2.5 px-4 rounded-lg hover:bg-slate-600 transition-all duration-300 flex items-center justify-center text-md"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 20h5v-5M20 4h-5v5" />
+                    </svg>
+                    Use a Different Image
+                  </button>
+                </div>
+                
+                <hr className="border-slate-700/60"/>
+
+                <div className="space-y-4">
+                  <h2 className="text-xl font-bold text-center text-slate-300">2. Configure Style</h2>
+                  <ConversionControls
+                    conversionType={conversionType}
+                    onConversionChange={handleConversionChange}
+                    isDisabled={isLoading}
+                  />
+                  {conversionType === ConversionType.REALISTIC_TO_CARTOON && (
+                    <StyleSelector
+                      title="Choose Cartoon Style"
+                      styles={CARTOON_STYLE_OPTIONS}
+                      selectedStyle={cartoonStyle}
+                      onStyleChange={(style) => setCartoonStyle(style as CartoonStyle)}
+                      isDisabled={isLoading}
+                    />
+                  )}
+                  {conversionType === ConversionType.CARTOON_TO_REALISTIC && (
+                    <StyleSelector
+                      title="Choose Realistic Style"
+                      styles={REALISTIC_STYLE_OPTIONS}
+                      selectedStyle={realisticStyle}
+                      onStyleChange={(style) => setRealisticStyle(style as RealisticStyle)}
+                      isDisabled={isLoading}
+                    />
+                  )}
+                </div>
+
+                <hr className="border-slate-700/60"/>
+
+                <div className="space-y-4">
+                   <h2 className="text-xl font-bold text-center text-slate-300">3. Generate!</h2>
+                   <button
+                    onClick={handleGenerate}
+                    disabled={!originalImage || isLoading}
+                    className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-500 transition-all duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center text-lg shadow-indigo-500/30 shadow-md"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Spinner />
+                        Generating...
+                      </>
+                    ) : '✨ Generate Image'}
+                  </button>
+                </div>
+              </>
             )}
-            {conversionType === ConversionType.CARTOON_TO_REALISTIC && (
-               <StyleSelector
-                title="Choose Realistic Style"
-                styles={REALISTIC_STYLE_OPTIONS}
-                selectedStyle={realisticStyle}
-                onStyleChange={(style) => setRealisticStyle(style as RealisticStyle)}
-                isDisabled={isLoading}
-              />
-            )}
-            <button
-              onClick={handleGenerate}
-              disabled={!originalImage || isLoading}
-              className="w-full mt-6 bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-500 transition-all duration-300 disabled:bg-slate-600 disabled:cursor-not-allowed flex items-center justify-center text-lg shadow-indigo-500/30 shadow-md"
-            >
-              {isLoading ? (
-                <>
-                  <Spinner />
-                  Generating...
-                </>
-              ) : 'Generate'}
-            </button>
+
             {error && (
-              <div className="mt-4 text-left bg-red-900/50 text-red-300 p-4 rounded-lg border border-red-700 space-y-2">
-                <div className="flex items-center justify-center font-bold">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <div className="animate-slide-up-fade-in mt-2 text-left bg-red-900/50 text-red-300 p-4 rounded-lg border border-red-700 space-y-2">
+                <div className="flex items-center font-bold">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
-                  <p>Generation Failed</p>
+                  <span>Generation Failed</span>
                 </div>
-                <p className="text-sm text-red-200">{error}</p>
+                <p className="text-sm text-red-200 pl-7">{error}</p>
               </div>
             )}
           </div>
 
-          <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-            <ImageDisplay title="Original Image" imageUrl={originalImagePreview} />
+          {/* Right Column: Output */}
+          <div className="lg:sticky lg:top-8">
             <ImageDisplay title="Generated Image" imageUrl={generatedImage} isLoading={isLoading} modelTextResponse={modelTextResponse} />
           </div>
         </main>

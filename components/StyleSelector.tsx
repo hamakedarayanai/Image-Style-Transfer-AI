@@ -10,10 +10,11 @@ interface StyleSelectorProps {
 
 const StyleSelector: React.FC<StyleSelectorProps> = ({ title, styles, selectedStyle, onStyleChange, isDisabled }) => {
   return (
-    <div className="mt-6">
-      <h3 className="text-lg font-semibold text-center text-slate-300 mb-3">{title}</h3>
+    <div className="w-full">
+      <h3 className="text-md font-semibold text-left text-slate-300 mb-3">{title}</h3>
       <div className="grid grid-cols-2 gap-3">
-        {Object.entries(styles).map(([styleKey, { name, emoji }]) => (
+        {/* FIX: Destructuring the value from Object.entries directly in the map parameters was causing a TypeScript inference issue. Changed to a simple variable `styleDetails` and accessed properties from it to resolve the error. */}
+        {Object.entries(styles).map(([styleKey, styleDetails]) => (
           <label
             key={styleKey}
             className={`relative flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 text-center
@@ -30,8 +31,8 @@ const StyleSelector: React.FC<StyleSelectorProps> = ({ title, styles, selectedSt
               disabled={isDisabled}
             />
             <div>
-                <span className="text-xl" role="img" aria-label={`${name} emoji`}>{emoji}</span>
-                <p className="font-semibold text-sm mt-1">{name}</p>
+                <span className="text-xl" role="img" aria-label={`${styleDetails.name} emoji`}>{styleDetails.emoji}</span>
+                <p className="font-semibold text-sm mt-1">{styleDetails.name}</p>
             </div>
           </label>
         ))}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ConversionType } from '../types';
 
@@ -10,8 +9,8 @@ interface ConversionControlsProps {
 
 const ConversionControls: React.FC<ConversionControlsProps> = ({ conversionType, onConversionChange, isDisabled }) => {
   return (
-    <div className="mt-6">
-      <h3 className="text-lg font-semibold text-center text-slate-300 mb-3">Choose Conversion Style</h3>
+    <div className="w-full">
+      <h3 className="text-md font-semibold text-left text-slate-300 mb-3">Conversion Direction</h3>
       <div className="grid grid-cols-2 gap-4">
         <label className={`relative flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${conversionType === ConversionType.REALISTIC_TO_CARTOON ? 'border-indigo-500 bg-indigo-900/50' : 'border-slate-600 bg-slate-800 hover:bg-slate-700'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <input
